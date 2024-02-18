@@ -19,6 +19,13 @@ def sip_calculator(annual_rate,principal,years,step_up = 0, inflation = 0,is_lum
 def calculate_Fv(rate, nper, pmt, pv):
     fv = pv * ((1 + rate) ** nper) + pmt * (((1 + rate) ** nper - 1) / rate)
     return fv
+
+def calculate_Pmt(rate,nper,pv,fv=0):
+    if rate == 0:
+        return -(pv + fv) / nper
+    else:
+        pmt = (rate * (pv + fv)) / ((1 + rate) ** nper - 1)
+        return pmt
     
 def retirement_portfolio_balance_swp_calculator(
     ppf_amt,pf_amt,nsc_amt, postal_amt, bank_amt, company_amt,insurance_amt, annual_amt_rate,
@@ -71,6 +78,27 @@ def retirement_portfolio_balance_swp_calculator(
 
 def calculate_total_return_with_lumpsum_and_sip(initial_lumpsum,principal,rate,years):
     return calculate_Fv(rate/12,years*12,principal,initial_lumpsum)
+
+def calculate_differential_returns_by_age(age,retirement, corpus, rate,inflation = 0):
+    result = {}
+    result['monthly'] = calculate_Pmt((rate - inflation)/12,(retirement - age) * 12,0,corpus)
+    result['yearly'] = result['monthly'] * 12
+    return result
+
+def calculate_Pv(rate, nper, pmt, fv=0):
+    if rate == 0:
+        return -(fv + pmt * nper)
+    else:
+        pv = pmt * ((1 - (1 + rate) ** -nper) / rate) + fv / (1 + rate) ** nper
+        return pv
+
+def calculate_required_sip_amt(current_age, retirement_age, rate, inflation, monthly_expense, assumed_future_return,assumed_future_inflation,residual_amt):
+    amout_required_monthly = calculate_Fv(inflation,retirement_age - current_age,0,monthly_expense)
+    print((assumed_future_return - assumed_future_inflation)/12,12*(100-retirement_age),amout_required_monthly,residual_amt)
+    required_capital = calculate_Pv((assumed_future_return - assumed_future_inflation)/12,12*(100-retirement_age),amout_required_monthly,residual_amt)
+    required_sip_amt = calculate_Pmt((rate - inflation) / 12,12 * (retirement_age - current_age),0,required_capital)
+    result ={"Required SIP Amount":required_sip_amt,"Required Capital":required_capital,"Monthly Required Amount":amout_required_monthly}
+    return result
     
 
 if __name__ == "__main__":
@@ -82,3 +110,5 @@ if __name__ == "__main__":
     )
     #print(val['final'])
     #print(calculate_total_return_with_lumpsum_and_sip(2500000,5000,0.12,10))
+    #print(calculate_differential_returns_by_age(25,60,10000000,0.12))
+    print(calculate_required_sip_amt(24,60,0.12,0.04,40000,0.07,0.02,20000000))
